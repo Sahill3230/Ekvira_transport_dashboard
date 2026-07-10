@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Driver Profile - {{ driver.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2 animate-fade-in-up">
+    <h5 class="fw-bold m-0 text-primary">
+        <i class="fas fa-id-card me-2"></i>Driver Profile: {{ driver.name }}
+    </h5>
+    <a href="{{ url_for('drivers.index') }}" class="btn btn-sm btn-outline-secondary fs-8">
+        <i class="fas fa-arrow-left me-1"></i> Back to Ledger
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Left Panel: Driver Identity card -->
+    <div class="col-lg-4">
+        <div class="glass-panel p-4 text-center animate-fade-in-up">
+            <div class="mb-3">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle" style="width: 80px; height: 80px;">
+                    <i class="fas fa-user-tie fa-3x"></i>
+                </div>
+            </div>
+            <h5 class="fw-bold m-0">{{ driver.name }}</h5>
+            <span class="status-badge mt-2 d-inline-block {% if driver.status == 'Active' %}status-active{% elif driver.status == 'On Trip' %}status-idle{% else %}status-maintenance{% endif %}">
+                {{ driver.status }}
+            </span>
+            
+            <hr>
+            
+            <table class="table table-borderless fs-8 text-start text-secondary m-0">
+                <tr><td><i class="fas fa-phone me-2"></i><b>Mobile:</b></td><td class="text-dark text-end">{{ driver.mobile }}</td></tr>
+                <tr><td><i class="fas fa-address-card me-2"></i><b>DL Number:</b></td><td class="text-dark text-end font-monospace">{{ driver.license_number }}</td></tr>
+                <tr><td><i class="fas fa-calendar-xmark me-2"></i><b>DL Expiry:</b></td><td class="text-dark text-end fw-bold">{{ driver.license_expiry.strftime('%Y-%m-%d') }}</td></tr>
+                <tr><td><i class="fas fa-fingerprint me-2"></i><b>Aadhaar:</b></td><td class="text-dark text-end">{{ driver.aadhaar_number }}</td></tr>
+                <tr><td><i class="fas fa-calendar-check me-2"></i><b>Joined:</b></td><td class="text-dark text-end">{{ driver.joining_date.strftime('%Y-%m-%d') }}</td></tr>
+                <tr><td><i class="fas fa-wallet me-2"></i><b>Salary:</b></td><td class="text-dark text-end fw-bold text-success">{{ driver.salary|format_currency }}</td></tr>
+            </table>
+
+            <hr>
+            <div class="text-start">
+                <label class="fw-bold fs-8 text-secondary"><i class="fas fa-home me-2"></i>Residential Address:</label>
+                <p class="fs-8 text-dark mt-1">{{ driver.address or 'N/A' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Trip Logs & Performance -->
+    <div class="col-lg-8">
+        <div class="row g-3 mb-4">
+            <!-- Metric 1: Total Trips -->
+            <div class="col-md-4">
+                <div class="glass-panel p-3 text-center animate-fade-in-up" style="animation-delay: 0.1s;">
+                    <span class="metric-label fs-9">Total Assigned Trips</span>
+                    <h4 class="fw-bold m-1 text-primary">{{ total_trips }}</h4>
+                </div>
+            </div>
+            <!-- Metric 2: Coal Delivered -->
+            <div class="col-md-4">
+                <div class="glass-panel p-3 text-center animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <span class="metric-label fs-9">Coal Transported</span>
+                    <h4 class="fw-bold m-1 text-success">{{ total_coal }} Tons</h4>
+                </div>
+            </div>
+            <!-- Metric 3: Revenue Generated -->
+            <div class="col-md-4">
+                <div class="glass-panel p-3 text-center animate-fade-in-up" style="animation-delay: 0.3s;">
+                    <span class="metric-label fs-9">Revenue Contribution</span>
+                    <h4 class="fw-bold m-1 text-warning">{{ total_earnings|format_currency }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel p-4 animate-fade-in-up" style="animation-delay: 0.4s;">
+            <h6 class="fw-bold border-bottom pb-2 mb-3">Historical Driver Trips Log</h6>
+            <div class="table-responsive">
+                <table class="table table-hover fs-8">
+                    <thead>
+                        <tr>
+                            <th>Trip ID</th>
+                            <th>Date</th>
+                            <th>Vehicle</th>
+                            <th>Destination</th>
+                            <th>Coal Weight</th>
+                            <th>Freight Earned</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if trips|length == 0 %}
+                        <tr><td colspan="7" class="text-center text-muted">No trip runs recorded yet for this driver.</td></tr>
+                        {% else %}
+                            {% for t in trips %}
+                            <tr>
+                                <td>#{{ t.id }}</td>
+                                <td>{{ t.start_date.strftime('%Y-%m-%d') }}</td>
+                                <td><span class="badge bg-secondary">{{ t.vehicle.vehicle_number if t.vehicle else 'N/A' }}</span></td>
+                                <td>{{ t.destination.name if t.destination else 'N/A' }}</td>
+                                <td>{{ t.coal_weight }} Tons</td>
+                                <td class="fw-bold text-success">{{ t.freight_amount|format_currency }}</td>
+                                <td>
+                                    <span class="status-badge {% if t.status == 'Delivered' %}status-delivered{% elif t.status == 'Cancelled' %}status-cancelled{% else %}status-idle{% endif %}">
+                                        {{ t.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

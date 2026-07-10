@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Tipper Fleet{% endblock %}
+
+{% block content %}
+<div class="glass-panel p-4 animate-fade-in-up">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold m-0"><i class="fas fa-truck text-primary me-2"></i>Tipper Fleet Management</h5>
+        <a href="{{ url_for('vehicles.add') }}" class="btn btn-primary fs-8">
+            <i class="fas fa-plus me-1"></i> Add Tipper
+        </a>
+    </div>
+
+    <!-- Filters and Search panel -->
+    <form method="GET" action="" class="row g-3 mb-4">
+        <div class="col-md-5 col-sm-12">
+            <div class="search-bar w-100">
+                <i class="fas fa-magnifying-glass"></i>
+                <input type="text" name="search" class="form-control" placeholder="Search by number, brand, model..." value="{{ search }}">
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <select name="status" class="form-select fs-8">
+                <option value="">-- All Statuses --</option>
+                <option value="Idle" {% if status_filter == 'Idle' %}selected{% endif %}>Idle</option>
+                <option value="Active" {% if status_filter == 'Active' %}selected{% endif %}>Active</option>
+                <option value="Maintenance" {% if status_filter == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+            </select>
+        </div>
+        <div class="col-md-4 col-sm-6 d-flex gap-2">
+            <button type="submit" class="btn btn-secondary fs-8 w-100"><i class="fas fa-filter me-1"></i> Apply Filters</button>
+            <a href="{{ url_for('vehicles.index') }}" class="btn btn-outline-secondary fs-8 w-100"><i class="fas fa-rotate-left me-1"></i> Reset</a>
+        </div>
+    </form>
+
+    <!-- Vehicles Datatable -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Vehicle Number</th>
+                    <th>Name/Brand</th>
+                    <th>Capacity (T)</th>
+                    <th>Driver Assigned</th>
+                    <th>Odometer</th>
+                    <th>Fleet Status</th>
+                    <th>AI Maint. Risk</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vehicles %}
+                <tr>
+                    <td class="fw-bold text-primary">{{ v.vehicle_number }}</td>
+                    <td>{{ v.vehicle_name }} <span class="text-muted fs-9">({{ v.model }})</span></td>
+                    <td>{{ v.capacity }} Tons</td>
+                    <td>
+                        {% if v.driver %}
+                        <a href="{{ url_for('drivers.profile', id=v.driver.id) }}" class="text-decoration-none fw-medium text-dark">
+                            <i class="far fa-user me-1 text-muted"></i>{{ v.driver.name }}
+                        </a>
+                        {% else %}
+                        <span class="text-danger fs-8">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ v.odometer|round(1) }} km</td>
+                    <td>
+                        <span class="status-badge {% if v.status == 'Active' %}status-active{% elif v.status == 'Maintenance' %}status-maintenance{% else %}status-idle{% endif %}">
+                            {{ v.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress w-100" style="height: 6px;">
+                                <div class="progress-bar {% if v.maintenance_risk > 70 %}bg-danger{% elif v.maintenance_risk > 40 %}bg-warning{% else %}bg-success{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ v.maintenance_risk }}%;">
+                                </div>
+                            </div>
+                            <span class="fs-8 fw-bold {% if v.maintenance_risk > 70 %}text-danger{% elif v.maintenance_risk > 40 %}text-warning{% else %}text-success{% endif %}">
+                                {{ v.maintenance_risk }}%
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{{ url_for('vehicles.history', id=v.id) }}" class="btn btn-sm btn-outline-info" title="View Logs/History"><i class="fas fa-history"></i></a>
+                            <a href="{{ url_for('vehicles.edit', id=v.id) }}" class="btn btn-sm btn-outline-secondary" title="Edit Tipper"><i class="fas fa-pen"></i></a>
+                            {% if current_user.role == 'Admin' %}
+                            <form action="{{ url_for('vehicles.delete', id=v.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this vehicle and all associated records?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

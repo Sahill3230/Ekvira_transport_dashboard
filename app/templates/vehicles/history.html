@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}History logs - {{ vehicle.vehicle_number }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2 animate-fade-in-up">
+    <h5 class="fw-bold m-0 text-primary">
+        <i class="fas fa-history me-2"></i>Tipper Operational Logs: {{ vehicle.vehicle_number }}
+    </h5>
+    <a href="{{ url_for('vehicles.index') }}" class="btn btn-sm btn-outline-secondary fs-8">
+        <i class="fas fa-arrow-left me-1"></i> Back to Fleet
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Tipper Specs & Compliance -->
+    <div class="col-lg-4">
+        <div class="glass-panel p-4 animate-fade-in-up">
+            <h6 class="fw-bold border-bottom pb-2 mb-3">Vehicle Details</h6>
+            
+            <table class="table table-borderless fs-8 m-0 text-secondary">
+                <tr><td><b>Brand/Model:</b></td><td class="text-dark text-end fw-bold">{{ vehicle.vehicle_name }} ({{ vehicle.model }})</td></tr>
+                <tr><td><b>RC Number:</b></td><td class="text-dark text-end">{{ vehicle.registration_number }}</td></tr>
+                <tr><td><b>Odometer Reading:</b></td><td class="text-dark text-end">{{ vehicle.odometer|round(1) }} km</td></tr>
+                <tr><td><b>Load Capacity:</b></td><td class="text-dark text-end fw-bold">{{ vehicle.capacity }} Tons</td></tr>
+                <tr><td><b>Fuel Type:</b></td><td class="text-dark text-end">{{ vehicle.fuel_type }}</td></tr>
+                <tr><td><b>Assigned Driver:</b></td><td class="text-dark text-end">{% if vehicle.driver %}{{ vehicle.driver.name }}{% else %}Unassigned{% endif %}</td></tr>
+            </table>
+
+            <h6 class="fw-bold border-bottom pb-2 mt-4 mb-3">Compliance Certificate Status</h6>
+            <table class="table table-borderless fs-8 m-0 text-secondary">
+                <tr>
+                    <td><b>Insurance Expiry:</b></td>
+                    <td class="text-end fw-bold">{{ vehicle.insurance_date.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                <tr>
+                    <td><b>Fitness Expiry:</b></td>
+                    <td class="text-end fw-bold">{{ vehicle.fitness_date.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                <tr>
+                    <td><b>PUC Expiry:</b></td>
+                    <td class="text-end fw-bold">{{ vehicle.puc_date.strftime('%Y-%m-%d') }}</td>
+                </tr>
+            </table>
+
+            <h6 class="fw-bold border-bottom pb-2 mt-4 mb-3">AI Engine Maintenance Alert</h6>
+            <div class="text-center py-2">
+                <div class="fs-4 fw-bold {% if ai_risk > 70 %}text-danger{% elif ai_risk > 40 %}text-warning{% else %}text-success{% endif %}">
+                    {{ ai_risk }}%
+                </div>
+                <div class="fs-9 text-muted uppercase mt-1">Breakdown probability index</div>
+                <p class="fs-8 text-secondary mt-2 px-2">
+                    {% if ai_risk > 70 %}
+                    <b>Urgent Alert:</b> Servicing recommended within 48 hours to avoid mechanical failure.
+                    {% elif ai_risk > 40 %}
+                    <b>Maintenance Warning:</b> Schedule routine engine checking soon.
+                    {% else %}
+                    <b>Systems Normal:</b> Operating within safe operational ranges.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Tabs Logs History -->
+    <div class="col-lg-8">
+        <div class="glass-panel p-4 animate-fade-in-up" style="animation-delay: 0.1s;">
+            <!-- Tabs Menu -->
+            <ul class="nav nav-pills mb-3 border-bottom pb-2 fs-8" id="historyTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="trips-tab" data-bs-toggle="pill" data-bs-target="#trips" type="button" role="tab" aria-controls="trips" aria-selected="true">
+                        <i class="fas fa-route me-1"></i> Trip History ({{ trips|length }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="fuel-tab" data-bs-toggle="pill" data-bs-target="#fuel" type="button" role="tab" aria-controls="fuel" aria-selected="false">
+                        <i class="fas fa-gas-pump me-1"></i> Refueling logs ({{ fuel|length }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="maint-tab" data-bs-toggle="pill" data-bs-target="#maint" type="button" role="tab" aria-controls="maint" aria-selected="false">
+                        <i class="fas fa-wrench me-1"></i> Servicing Logs ({{ maintenance|length }})
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tabs Content -->
+            <div class="tab-content" id="historyTabContent">
+                <!-- Trips Tab -->
+                <div class="tab-pane fade show active" id="trips" role="tabpanel" aria-labelledby="trips-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover fs-8">
+                            <thead>
+                                <tr>
+                                    <th>Trip ID</th>
+                                    <th>Date</th>
+                                    <th>Destination</th>
+                                    <th>Load (Tons)</th>
+                                    <th>Revenue</th>
+                                    <th>Profit</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if trips|length == 0 %}
+                                <tr><td colspan="7" class="text-center text-muted">No trip logs found for this vehicle.</td></tr>
+                                {% else %}
+                                    {% for t in trips %}
+                                    <tr>
+                                        <td>#{{ t.id }}</td>
+                                        <td>{{ t.start_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ t.destination.name if t.destination else 'N/A' }}</td>
+                                        <td>{{ t.coal_weight }} T</td>
+                                        <td>{{ t.freight_amount|format_currency }}</td>
+                                        <td class="{% if t.profit >= 0 %}text-success{% else %}text-danger{% endif %}">{{ t.profit|format_currency }}</td>
+                                        <td><span class="status-badge {% if t.status == 'Delivered' %}status-delivered{% elif t.status == 'Cancelled' %}status-cancelled{% else %}status-idle{% endif %}">{{ t.status }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Fuel Tab -->
+                <div class="tab-pane fade" id="fuel" role="tabpanel" aria-labelledby="fuel-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover fs-8">
+                            <thead>
+                                <tr>
+                                    <th>Refill Date</th>
+                                    <th>Station</th>
+                                    <th>Qty (Liters)</th>
+                                    <th>Price / L</th>
+                                    <th>Total Cost</th>
+                                    <th>Mileage (km/l)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if fuel|length == 0 %}
+                                <tr><td colspan="6" class="text-center text-muted">No refueling logs found.</td></tr>
+                                {% else %}
+                                    {% for f in fuel %}
+                                    <tr>
+                                        <td>{{ f.date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ f.fuel_station or 'N/A' }}</td>
+                                        <td>{{ f.fuel_filled }} L</td>
+                                        <td>₹{{ f.price }}</td>
+                                        <td>₹{{ (f.fuel_filled * f.price)|round(1) }}</td>
+                                        <td>{{ f.mileage or 'N/A' }} km/l</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Maintenance Tab -->
+                <div class="tab-pane fade" id="maint" role="tabpanel" aria-labelledby="maint-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover fs-8">
+                            <thead>
+                                <tr>
+                                    <th>Service Date</th>
+                                    <th>Workshop</th>
+                                    <th>Replacements</th>
+                                    <th>Cost</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if maintenance|length == 0 %}
+                                <tr><td colspan="5" class="text-center text-muted">No service records found.</td></tr>
+                                {% else %}
+                                    {% for m in maintenance %}
+                                    <tr>
+                                        <td>{{ m.service_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ m.workshop_name }}</td>
+                                        <td>
+                                            {% if m.tyre_change %}<span class="badge bg-secondary">Tyre</span>{% endif %}
+                                            {% if m.oil_change %}<span class="badge bg-secondary">Oil</span>{% endif %}
+                                            {% if m.battery_change %}<span class="badge bg-secondary">Battery</span>{% endif %}
+                                        </td>
+                                        <td class="fw-bold">₹{{ m.service_cost }}</td>
+                                        <td><span class="text-secondary fs-9" title="{{ m.details }}">{{ m.details[:35] }}{% if m.details|length > 35 %}...{% endif %}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

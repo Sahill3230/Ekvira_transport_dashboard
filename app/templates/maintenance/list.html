@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Maintenance Logs{% endblock %}
+
+{% block content %}
+<div class="glass-panel p-4 animate-fade-in-up">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+        <h5 class="fw-bold m-0"><i class="fas fa-wrench text-primary me-2"></i>Tipper Servicing & Maintenance logs</h5>
+        <a href="{{ url_for('maintenance.add') }}" class="btn btn-primary fs-8">
+            <i class="fas fa-plus me-1"></i> Log Maintenance
+        </a>
+    </div>
+
+    <!-- Maintenance Records Datatable -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle data-table">
+            <thead>
+                <tr>
+                    <th>Log ID</th>
+                    <th>Service Date</th>
+                    <th>Vehicle</th>
+                    <th>Workshop</th>
+                    <th>Items Replaced</th>
+                    <th>Service Cost</th>
+                    <th>Next Service Date</th>
+                    <th>Details</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in logs %}
+                <tr>
+                    <td>#{{ m.id }}</td>
+                    <td>{{ m.service_date.strftime('%Y-%m-%d') }}</td>
+                    <td class="fw-bold text-primary">{{ m.vehicle.vehicle_number if m.vehicle else 'N/A' }}</td>
+                    <td>{{ m.workshop_name or 'N/A' }}</td>
+                    <td>
+                        {% if m.tyre_change %}<span class="badge bg-danger fs-9">Tire</span>{% endif %}
+                        {% if m.oil_change %}<span class="badge bg-warning text-dark fs-9">Oil</span>{% endif %}
+                        {% if m.battery_change %}<span class="badge bg-primary fs-9">Battery</span>{% endif %}
+                        {% if not m.tyre_change and not m.oil_change and not m.battery_change %}
+                        <span class="text-muted fs-8">General checkup</span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold text-danger">₹{{ m.service_cost }}</td>
+                    <td class="fw-bold text-secondary">{{ m.next_service_date.strftime('%Y-%m-%d') }}</td>
+                    <td class="fs-9 text-secondary" title="{{ m.details }}">{{ m.details[:50] }}{% if m.details|length > 50 %}...{% endif %}</td>
+                    <td>
+                        <form action="{{ url_for('maintenance.delete', id=m.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this maintenance record? Corresponding maintenance expenses will also be deleted.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

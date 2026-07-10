@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Card 1: Tipper Fleet -->
+    <div class="col-md-3">
+        <div class="glass-panel metric-card animate-fade-in-up">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Tipper Fleet</span>
+                <i class="fas fa-truck fa-lg text-primary"></i>
+            </div>
+            <div class="metric-value">{{ total_vehicles }}</div>
+            <div class="fs-8 text-secondary">
+                <span class="text-success"><i class="fas fa-circle fs-9 me-1"></i>{{ running_vehicles }} Active</span> | 
+                <span class="text-warning"><i class="fas fa-circle fs-9 me-1"></i>{{ idle_vehicles }} Idle</span> | 
+                <span class="text-danger"><i class="fas fa-circle fs-9 me-1"></i>{{ maint_vehicles }} Repair</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Card 2: Today's Trips -->
+    <div class="col-md-3">
+        <div class="glass-panel metric-card animate-fade-in-up" style="animation-delay: 0.1s;">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Today's Operations</span>
+                <i class="fas fa-route fa-lg text-success"></i>
+            </div>
+            <div class="metric-value">{{ today_trips_count }}</div>
+            <div class="fs-8 text-secondary">
+                <span>{{ active_trips_count }} Trips Running</span> | 
+                <span class="text-success">{{ completed_trips_count }} Delivered</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Monthly Net Profit -->
+    <div class="col-md-3">
+        <div class="glass-panel metric-card animate-fade-in-up" style="animation-delay: 0.2s;">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Net Profit (Monthly)</span>
+                <i class="fas fa-sack-dollar fa-lg text-warning"></i>
+            </div>
+            <div class="metric-value {% if monthly_net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ monthly_net_profit|format_currency }}
+            </div>
+            <div class="fs-8 text-secondary">
+                <span>Rev: {{ monthly_revenue|format_currency }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Coal Transported -->
+    <div class="col-md-3">
+        <div class="glass-panel metric-card animate-fade-in-up" style="animation-delay: 0.3s;">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Coal Transported</span>
+                <i class="fas fa-weight-hanging fa-lg text-info"></i>
+            </div>
+            <div class="metric-value">{{ total_coal }} Tons</div>
+            <div class="fs-8 text-secondary">
+                <span>Liters Fuel (Mo): {{ monthly_fuel }}L</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map View Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-9 col-md-12">
+        <div class="glass-panel p-3 animate-fade-in-up" style="animation-delay: 0.4s;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="m-0 fw-bold"><i class="fas fa-map-location-dot text-primary me-2"></i>Live GPS Fleet Tracking</h6>
+                <div class="d-flex align-items-center gap-3 fs-8">
+                    <span><i class="fas fa-circle text-success me-1"></i>Running</span>
+                    <span><i class="fas fa-circle text-warning me-1"></i>Idle</span>
+                    <span><i class="fas fa-circle text-danger me-1"></i>Maintenance</span>
+                </div>
+            </div>
+            <div id="live-fleet-map"></div>
+        </div>
+    </div>
+    
+    <!-- Quick Notifications Feed -->
+    <div class="col-lg-3 col-md-12">
+        <div class="glass-panel p-3 animate-fade-in-up h-100 d-flex flex-column" style="animation-delay: 0.4s;">
+            <h6 class="fw-bold mb-3"><i class="fas fa-triangle-exclamation text-warning me-2"></i>Compliance Warnings</h6>
+            <div class="flex-grow-1 overflow-auto" style="max-height: 440px;">
+                {% if unread_alerts|length == 0 %}
+                <div class="text-center text-muted py-5 fs-8">All tippers and drivers are fully compliant.</div>
+                {% else %}
+                    {% for notif in unread_alerts %}
+                    <div class="p-3 mb-3 rounded border-start border-4 border-warning glass-panel" style="background: rgba(245, 158, 11, 0.05); animation-delay: {{ loop.index * 0.1 }}s;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge bg-warning text-dark fs-9">{{ notif.type }}</span>
+                            <span class="fs-9 text-muted">{{ notif.created_at.strftime('%H:%M') }}</span>
+                        </div>
+                        <div class="fs-8 text-secondary">{{ notif.message }}</div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4">
+    <!-- Chart A: Daily Revenue -->
+    <div class="col-md-6">
+        <div class="glass-panel p-4 animate-fade-in-up" style="animation-delay: 0.5s;">
+            <h6 class="fw-bold mb-3"><i class="fas fa-chart-line text-primary me-2"></i>Daily Revenue Trends</h6>
+            <div style="height: 250px; position: relative;">
+                <canvas id="dailyRevenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chart B: Expense Breakdown -->
+    <div class="col-md-6">
+        <div class="glass-panel p-4 animate-fade-in-up" style="animation-delay: 0.6s;">
+            <h6 class="fw-bold mb-3"><i class="fas fa-chart-pie text-danger me-2"></i>Expense Distribution</h6>
+            <div style="height: 250px; position: relative;">
+                <canvas id="expenseBreakdownChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart C: Destination deliveries -->
+    <div class="col-md-6">
+        <div class="glass-panel p-4 animate-fade-in-up" style="animation-delay: 0.7s;">
+            <h6 class="fw-bold mb-3"><i class="fas fa-chart-bar text-info me-2"></i>Coal Delivery by Plant (Tons)</h6>
+            <div style="height: 250px; position: relative;">
+                <canvas id="destinationCoalChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart D: Trip statuses -->
+    <div class="col-md-6">
+        <div class="glass-panel p-4 animate-fade-in-up" style="animation-delay: 0.8s;">
+            <h6 class="fw-bold mb-3"><i class="fas fa-route text-success me-2"></i>Trip Statuses Distribution</h6>
+            <div style="height: 250px; position: relative;">
+                <canvas id="tripStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Live Map Script -->
+<script src="{{ url_for('static', filename='js/live_map.js') }}"></script>
+
+<!-- Inline Chart.js Config -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const isDark = document.body.classList.contains('dark-theme');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+        
+        // 1. Daily Revenue Chart
+        const dailyRevCtx = document.getElementById('dailyRevenueChart').getContext('2d');
+        const revGradient = dailyRevCtx.createLinearGradient(0, 0, 0, 200);
+        revGradient.addColorStop(0, 'rgba(59, 130, 246, 0.6)');
+        revGradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
+
+        new Chart(dailyRevCtx, {
+            type: 'line',
+            data: {
+                labels: {{ daily_rev_labels|tojson }},
+                datasets: [{
+                    label: 'Revenue (Rs)',
+                    data: {{ daily_rev_values|tojson }},
+                    borderColor: '#3b82f6',
+                    borderWidth: 3,
+                    fill: true,
+                    backgroundColor: revGradient,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: gridColor } },
+                    y: { grid: { color: gridColor }, ticks: { callback: value => '₹' + value.toLocaleString() } }
+                }
+            }
+        });
+
+        // 2. Expense Breakdown Chart
+        const expenseCtx = document.getElementById('expenseBreakdownChart').getContext('2d');
+        new Chart(expenseCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ expense_categories|tojson }},
+                datasets: [{
+                    data: {{ expense_values|tojson }},
+                    backgroundColor: ['#ef4444', '#10b981', '#fbbf24', '#3b82f6', '#8b5cf6', '#64748b'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 3. Destination Coal Delivery
+        const destCtx = document.getElementById('destinationCoalChart').getContext('2d');
+        new Chart(destCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ dest_labels|tojson }},
+                datasets: [{
+                    label: 'Coal weight (Tons)',
+                    data: {{ dest_coal_wts|tojson }},
+                    backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: gridColor } },
+                    y: { grid: { color: gridColor } }
+                }
+            }
+        });
+
+        // 4. Trip Status Chart
+        const tripCtx = document.getElementById('tripStatusChart').getContext('2d');
+        new Chart(tripCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ trip_status_labels|tojson }},
+                datasets: [{
+                    data: {{ trip_status_values|tojson }},
+                    backgroundColor: ['#fbbf24', '#3b82f6', '#10b981', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

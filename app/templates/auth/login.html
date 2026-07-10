@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Sign In{% endblock %}
+
+{% block auth_content %}
+<div class="auth-page">
+    <div class="glass-panel auth-card animate-fade-in-up">
+        <div class="text-center mb-4">
+            <i class="fas fa-truck-ramp-box fa-3x text-primary mb-3"></i>
+            <h3 class="fw-bold">Ekvira Transport</h3>
+            <p class="text-secondary fs-8">Tipper Fleet Operations & Prediction Center</p>
+        </div>
+        
+        <!-- Flash messages for auth -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} py-2 fs-8 mb-3" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-3">
+                <label for="username" class="form-label fs-8 fw-bold text-uppercase">Username or Email</label>
+                {{ form.username(class="form-control", id="username", placeholder="Enter username or email") }}
+                {% if form.username.errors %}
+                    {% for error in form.username.errors %}
+                        <div class="text-danger fs-9 mt-1">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label fs-8 fw-bold text-uppercase">Password</label>
+                {{ form.password(class="form-control", id="password", placeholder="Enter password") }}
+                {% if form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <div class="text-danger fs-9 mt-1">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div class="form-check mb-4">
+                {{ form.remember(class="form-check-input", id="remember") }}
+                <label class="form-check-label fs-8 text-secondary" for="remember">
+                    Keep me logged in
+                </label>
+            </div>
+            
+            <div class="d-grid">
+                {{ form.submit(class="btn btn-primary btn-lg fs-7") }}
+            </div>
+        </form>
+        
+        <div class="text-center mt-4 border-top pt-3 fs-9 text-muted">
+            <p class="m-0">B.Tech AIML Final Year Project</p>
+            <p class="m-0">Credentials: <b>EkviraTransport</b> / <b>Ekviratransport@3230</b></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

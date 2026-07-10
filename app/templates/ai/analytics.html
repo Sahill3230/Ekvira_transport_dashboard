@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}AI Analytics{% endblock %}
+
+{% block content %}
+<!-- Top Card: Net Profit Timeline Prediction -->
+<div class="glass-panel p-4 mb-4 animate-fade-in-up">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="fw-bold m-0"><i class="fas fa-brain text-info me-2"></i>AI Forecasting & Operational Analytics</h5>
+        <span class="badge bg-info fs-8"><i class="fas fa-microchip me-1"></i>Scikit-learn Prediction Engine</span>
+    </div>
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <p class="fs-8 text-secondary m-0">
+                Using regression timelines, operations logs, and fuel logs, the predictive engine projects transport economics.
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="fs-9 text-muted uppercase">Predicted Net Profit (Next Month)</div>
+            <h3 class="fw-bold text-success m-0">{{ predicted_profit|format_currency }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: AI Recommendations -->
+    <div class="col-lg-4 col-md-12">
+        <div class="glass-panel p-4 animate-fade-in-up h-100 d-flex flex-column" style="animation-delay: 0.1s;">
+            <h6 class="fw-bold mb-3 border-bottom pb-2">
+                <i class="fas fa-lightbulb text-warning me-2"></i>AI Fleet Optimization Tips
+            </h6>
+            
+            <div class="flex-grow-1 overflow-auto" style="max-height: 480px;">
+                {% for r in recommendations %}
+                <div class="p-3 mb-3 rounded border-start border-4 {% if r.severity == 'High' %}border-danger{% else %}border-warning{% endif %} glass-panel" 
+                     style="background: rgba(245, 158, 11, 0.03);">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold fs-8 text-dark">{{ r.title }}</span>
+                        <span class="badge {% if r.severity == 'High' %}bg-danger{% else %}bg-warning text-dark{% endif %} fs-9">{{ r.severity }}</span>
+                    </div>
+                    <p class="fs-8 text-secondary m-0 mt-1">{{ r.message }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Interactive Prediction Tools -->
+    <div class="col-lg-8 col-md-12">
+        <div class="row g-4">
+            <!-- Tool 1: Vehicle Maintenance Risk Calculator -->
+            <div class="col-md-6">
+                <div class="glass-panel p-4 animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <h6 class="fw-bold mb-3 text-primary"><i class="fas fa-wrench me-2"></i>Servicing Risk Checker</h6>
+                    
+                    <form id="maint-pred-form" class="fs-8">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Select Tipper Vehicle</label>
+                            <select name="vehicle_id" id="maint_veh" class="form-select fs-8" required>
+                                {% for v in vehicles %}
+                                <option value="{{ v.id }}">{{ v.vehicle_number }} ({{ v.vehicle_name }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary w-100">Run Maintenance Risk Prediction</button>
+                    </form>
+                    
+                    <div id="maint-result" class="mt-3 p-3 rounded glass-panel text-center fs-8 d-none" style="background: rgba(59, 130, 246, 0.05);">
+                        <div>Risk Probability: <b id="maint-risk-val" class="fs-6">0%</b></div>
+                        <div id="maint-verdict" class="mt-1 text-secondary">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tool 2: Monthly Fuel Budget Calculator -->
+            <div class="col-md-6">
+                <div class="glass-panel p-4 animate-fade-in-up" style="animation-delay: 0.3s;">
+                    <h6 class="fw-bold mb-3 text-success"><i class="fas fa-gas-pump me-2"></i>Fuel Requirement Estimator</h6>
+                    
+                    <form id="fuel-pred-form" class="fs-8">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Select Tipper Vehicle</label>
+                            <select name="vehicle_id" id="fuel_veh" class="form-select fs-8" required>
+                                {% for v in vehicles %}
+                                <option value="{{ v.id }}">{{ v.vehicle_number }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Scheduled Monthly Kilometers</label>
+                            <input type="number" name="kms" id="fuel_kms" class="form-control fs-8" placeholder="e.g. 2500" required>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-success w-100 text-white">Estimate Fuel Needs</button>
+                    </form>
+                    
+                    <div id="fuel-result" class="mt-3 p-3 rounded glass-panel fs-8 d-none" style="background: rgba(16, 185, 129, 0.05);">
+                        <div>Predicted fuel: <b id="fuel-qty-val">0 Liters</b></div>
+                        <div>Estimated budget: <b id="fuel-cost-val" class="text-success">₹0.00</b></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tool 3: Trip Completion Duration Forecaster -->
+            <div class="col-md-12">
+                <div class="glass-panel p-4 animate-fade-in-up" style="animation-delay: 0.4s;">
+                    <h6 class="fw-bold mb-3 text-info"><i class="fas fa-clock me-2"></i>Trip Transit Duration Estimator</h6>
+                    
+                    <form id="trip-pred-form" class="row g-3 fs-8">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Select Destination</label>
+                            <select name="destination_id" id="trip_dest" class="form-select fs-8" required>
+                                {% for d in destinations %}
+                                <option value="{{ d.id }}">{{ d.name }} ({{ d.distance }} km)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Select Vehicle Tipper</label>
+                            <select name="vehicle_id" id="trip_veh" class="form-select fs-8" required>
+                                {% for v in vehicles %}
+                                <option value="{{ v.id }}">{{ v.vehicle_number }} (Cap: {{ v.capacity }}T)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Coal Loaded Weight (Tons)</label>
+                            <input type="number" name="coal_weight" id="trip_wt" class="form-control fs-8" placeholder="Loaded weight" step="0.1" required>
+                        </div>
+                        <div class="col-md-12 text-end">
+                            <button type="submit" class="btn btn-sm btn-info text-white px-4">Run Trip Time Forecast</button>
+                        </div>
+                    </form>
+                    
+                    <div id="trip-result" class="mt-3 p-3 rounded glass-panel text-center fs-8 d-none" style="background: rgba(13, 202, 240, 0.05);">
+                        <div>Expected Trip Duration: <b id="trip-hours-val" class="fs-6 text-info">0.0 hours</b></div>
+                        <div id="trip-eta-msg" class="mt-1 text-secondary">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const csrfToken = "{{ csrf_token() }}";
+        
+        // 1. Maintenance prediction submit handler
+        const maintForm = document.getElementById('maint-pred-form');
+        const maintResult = document.getElementById('maint-result');
+        maintForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const vehId = document.getElementById('maint_veh').value;
+            
+            const formData = new FormData();
+            formData.append('vehicle_id', vehId);
+            
+            fetch('/ai/predict/maintenance', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('maint-risk-val').innerText = `${data.risk_percentage}%`;
+                document.getElementById('maint-verdict').innerText = data.verdict;
+                
+                // Color risk output based on risk percentage
+                const valEl = document.getElementById('maint-risk-val');
+                valEl.className = 'fs-6 fw-bold';
+                if(data.risk_percentage > 70) {
+                    valEl.classList.add('text-danger');
+                } else if(data.risk_percentage > 40) {
+                    valEl.classList.add('text-warning');
+                } else {
+                    valEl.classList.add('text-success');
+                }
+                
+                maintResult.classList.remove('d-none');
+            })
+            .catch(err => console.error(err));
+        });
+
+        // 2. Fuel prediction submit handler
+        const fuelForm = document.getElementById('fuel-pred-form');
+        const fuelResult = document.getElementById('fuel-result');
+        fuelForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const vehId = document.getElementById('fuel_veh').value;
+            const kmsVal = document.getElementById('fuel_kms').value;
+            
+            const formData = new FormData();
+            formData.append('vehicle_id', vehId);
+            formData.append('kms', kmsVal);
+            
+            fetch('/ai/predict/fuel', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('fuel-qty-val').innerText = `${data.predicted_fuel_liters} Liters`;
+                document.getElementById('fuel-cost-val').innerText = `₹${data.estimated_fuel_cost.toLocaleString()}`;
+                fuelResult.classList.remove('d-none');
+            })
+            .catch(err => console.error(err));
+        });
+
+        // 3. Trip transit prediction submit handler
+        const tripForm = document.getElementById('trip-pred-form');
+        const tripResult = document.getElementById('trip-result');
+        tripForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const destId = document.getElementById('trip_dest').value;
+            const vehId = document.getElementById('trip_veh').value;
+            const wtVal = document.getElementById('trip_wt').value;
+            
+            const formData = new FormData();
+            formData.append('destination_id', destId);
+            formData.append('vehicle_id', vehId);
+            formData.append('coal_weight', wtVal);
+            
+            fetch('/ai/predict/trip-time', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('trip-hours-val').innerText = `${data.predicted_hours} Hours`;
+                document.getElementById('trip-eta-msg').innerText = data.eta_message;
+                tripResult.classList.remove('d-none');
+            })
+            .catch(err => console.error(err));
+        });
+    });
+</script>
+{% endblock %}

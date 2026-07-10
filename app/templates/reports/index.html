@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Operational Reports{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+        <div class="glass-panel p-4 animate-fade-in-up">
+            <div class="d-flex align-items-center mb-4 border-bottom pb-2">
+                <h5 class="fw-bold m-0 text-primary">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Generate Operational & Financial Reports
+                </h5>
+            </div>
+
+            <div class="row g-4">
+                <!-- Filters Form -->
+                <div class="col-md-12">
+                    <div class="row g-3">
+                        <!-- Report Type -->
+                        <div class="col-md-6">
+                            <label for="report_type" class="form-label fs-8 fw-bold text-uppercase">Report Type</label>
+                            <select id="report_type" class="form-select fs-8">
+                                <option value="daily">Daily Trip Report</option>
+                                <option value="weekly">Weekly Trip Report</option>
+                                <option value="monthly">Monthly Trip Summary</option>
+                                <option value="vehicle">Vehicle Performance Log</option>
+                                <option value="driver">Driver Fleet Contribution</option>
+                                <option value="fuel">Fuel Usage & Station Log</option>
+                                <option value="profit_loss">Profit & Loss Ledger</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Date Range -->
+                        <div class="col-md-3">
+                            <label for="start_date" class="form-label fs-8 fw-bold text-uppercase">Start Date</label>
+                            <input type="date" id="start_date" class="form-control fs-8">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="end_date" class="form-label fs-8 fw-bold text-uppercase">End Date</label>
+                            <input type="date" id="end_date" class="form-control fs-8">
+                        </div>
+
+                        <!-- Dynamic Specific Selectors -->
+                        <div class="col-md-6" id="vehicle-select-container" style="display: none;">
+                            <label for="vehicle_id" class="form-label fs-8 fw-bold text-uppercase">Select Vehicle</label>
+                            <select id="vehicle_id" class="form-select fs-8">
+                                {% for v in vehicles %}
+                                <option value="{{ v.id }}">{{ v.vehicle_number }} ({{ v.vehicle_name }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6" id="driver-select-container" style="display: none;">
+                            <label for="driver_id" class="form-label fs-8 fw-bold text-uppercase">Select Driver</label>
+                            <select id="driver_id" class="form-select fs-8">
+                                {% for d in drivers %}
+                                <option value="{{ d.id }}">{{ d.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top d-flex gap-3 justify-content-end">
+                        <button type="button" class="btn btn-outline-success px-4 fs-8" onclick="exportReport('excel')">
+                            <i class="far fa-file-excel me-1"></i> Export to Excel
+                        </button>
+                        <button type="button" class="btn btn-primary px-4 fs-8" onclick="exportReport('pdf')">
+                            <i class="far fa-file-pdf me-1"></i> Export to PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const reportType = document.getElementById('report_type');
+        const vehContainer = document.getElementById('vehicle-select-container');
+        const drvContainer = document.getElementById('driver-select-container');
+        
+        // Auto-set default date range (last 30 days)
+        const today = new Date();
+        const start = new Date();
+        start.setDate(today.getDate() - 30);
+        
+        document.getElementById('start_date').value = start.toISOString().split('T')[0];
+        document.getElementById('end_date').value = today.toISOString().split('T')[0];
+        
+        function handleSelectionChange() {
+            const val = reportType.value;
+            vehContainer.style.display = val === 'vehicle' ? 'block' : 'none';
+            drvContainer.style.display = val === 'driver' ? 'block' : 'none';
+        }
+        
+        reportType.addEventListener('change', handleSelectionChange);
+        handleSelectionChange(); // Trigger initially
+    });
+
+    function exportReport(format) {
+        const type = document.getElementById('report_type').value;
+        const startDate = document.getElementById('start_date').value;
+        const endDate = document.getElementById('end_date').value;
+        const vehicleId = document.getElementById('vehicle_id').value;
+        const driverId = document.getElementById('driver_id').value;
+        
+        let url = `/reports/export/${format}?type=${type}&start_date=${startDate}&end_date=${endDate}`;
+        if (type === 'vehicle') {
+            url += `&vehicle_id=${vehicleId}`;
+        } else if (type === 'driver') {
+            url += `&driver_id=${driverId}`;
+        }
+        
+        window.location.href = url;
+    }
+</script>
+{% endblock %}

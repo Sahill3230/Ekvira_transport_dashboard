@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Destinations Log{% endblock %}
+
+{% block content %}
+<div class="glass-panel p-4 animate-fade-in-up">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+        <h5 class="fw-bold m-0"><i class="fas fa-location-dot text-primary me-2"></i>Destination Routes & Billing Rates</h5>
+        <button class="btn btn-primary fs-8" data-bs-toggle="modal" data-bs-target="#addDestModal">
+            <i class="fas fa-plus me-1"></i> Add Destination
+        </button>
+    </div>
+
+    <!-- Destinations Grid Card Layout -->
+    <div class="row g-4">
+        {% for d in destinations %}
+        <div class="col-md-6 col-lg-3">
+            <div class="glass-panel p-3 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="fw-bold text-dark m-0">{{ d.name }}</h6>
+                        <i class="fas fa-building-circle-check text-primary"></i>
+                    </div>
+                    <hr class="my-2">
+                    <div class="fs-8 text-secondary">
+                        <div class="mb-1"><b>Distance:</b> <span class="text-dark">{{ d.distance }} km</span></div>
+                        <div class="mb-1"><b>Freight Rate:</b> <span class="text-success fw-bold">₹{{ d.rate_per_ton }} / Ton</span></div>
+                        <div class="mb-1"><b>Est. Transit Time:</b> <span class="text-dark">{{ d.estimated_time }} hrs</span></div>
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-2 mt-3 pt-2 border-top">
+                    <button class="btn btn-sm btn-outline-secondary w-100 fs-9" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#editDestModal{{ d.id }}">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </button>
+                    {% if current_user.role == 'Admin' %}
+                    <form action="{{ url_for('destinations.delete', id=d.id) }}" method="POST" class="w-100" onsubmit="return confirm('Are you sure you want to delete this route?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger w-100 fs-9"><i class="fas fa-trash me-1"></i> Delete</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Destination Modal -->
+        <div class="modal fade" id="editDestModal{{ d.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content glass-panel" style="backdrop-filter: blur(20px);">
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold text-primary">Edit Route: {{ d.name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ url_for('destinations.edit', id=d.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fs-8 fw-bold">Destination Name</label>
+                                <input type="text" name="name" class="form-control" value="{{ d.name }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fs-8 fw-bold">One-Way Distance (km)</label>
+                                <input type="number" name="distance" class="form-control" value="{{ d.distance }}" step="0.1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fs-8 fw-bold">Rate Per Ton (INR)</label>
+                                <input type="number" name="rate_per_ton" class="form-control" value="{{ d.rate_per_ton }}" step="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fs-8 fw-bold">Estimated One-Way Duration (Hours)</label>
+                                <input type="number" name="estimated_time" class="form-control" value="{{ d.estimated_time }}" step="0.1" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top-0 pt-0">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Destination Modal -->
+<div class="modal fade" id="addDestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-panel" style="backdrop-filter: blur(20px);">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-primary">Add New Destination Route</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('destinations.add') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fs-8 fw-bold">Destination Name (e.g. Korba Plant)</label>
+                        <input type="text" name="name" class="form-control" placeholder="Enter plant/factory name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-8 fw-bold">One-Way Distance (km)</label>
+                        <input type="number" name="distance" class="form-control" placeholder="Distance in kilometers" step="0.1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-8 fw-bold">Rate Per Ton (INR)</label>
+                        <input type="number" name="rate_per_ton" class="form-control" placeholder="Price per ton loaded" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-8 fw-bold">Estimated One-Way Duration (Hours)</label>
+                        <input type="number" name="estimated_time" class="form-control" placeholder="Transit duration" step="0.1" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Create Route</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
