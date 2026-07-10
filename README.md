@@ -2,7 +2,7 @@
 
 A complete full-stack web application designed for a coal transport business that owns **07 tipper trucks** transporting coal from a loading mine to multiple power plants and factories. The project features operational logs, real-time fleet simulation on Leaflet maps, detailed expense/revenue bookkeeping, automatic certification alerts, and custom AI forecasting models built in pure Python.
 
-Developed as a premium final year project for B.Tech AIML.
+Developed as a project for B.Tech AIML.
 
 ---
 
@@ -27,7 +27,7 @@ Developed as a premium final year project for B.Tech AIML.
    * Live alerts widget displaying upcoming certification expiries.
 
 2. **Interactive GPS Tracking (Leaflet)**:
-   * Maps current locations of all 10 vehicles.
+   * Maps current locations of all 07 vehicles.
    * Trucks on active trips dynamically move along routes (Chhattisgarh mining routes).
    * Popups display vehicle numbers, speeds, destinations, status, driver, and remaining ETA.
    * Color-coded markers based on status (Green: Running, Yellow: Idle, Red: Maintenance).
