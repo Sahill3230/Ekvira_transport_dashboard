@@ -1,6 +1,6 @@
 # Ekvira Transport Dashboard
 
-A complete full-stack web application designed for a coal transport business that owns **10 tipper trucks** transporting coal from a loading mine to multiple power plants and factories. The project features operational logs, real-time fleet simulation on Leaflet maps, detailed expense/revenue bookkeeping, automatic certification alerts, and custom AI forecasting models built in pure Python.
+A complete full-stack web application designed for a coal transport business that owns **07 tipper trucks** transporting coal from a loading mine to multiple power plants and factories. The project features operational logs, real-time fleet simulation on Leaflet maps, detailed expense/revenue bookkeeping, automatic certification alerts, and custom AI forecasting models built in pure Python.
 
 Developed as a premium final year project for B.Tech AIML.
 
